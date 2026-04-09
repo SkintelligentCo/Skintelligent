@@ -1,171 +1,232 @@
+import { useNavigate, useParams } from "react-router-dom";
+
+import {
+  useProductAnalysisQuery,
+  useRemoveSavedProductMutation,
+  useSaveProductMutation,
+} from "../api/hooks";
+import FitScoreRing from "../components/FitScoreRing";
+import { PageTransition, Reveal, StaggerGroup } from "../components/Motion";
+import { ProductDetailSkeleton } from "../components/PageSkeletons";
+import ScoreBar from "../components/ScoreBar";
+import StatusMessage from "../components/StatusMessage";
+import Tag from "../components/Tag";
+import { useNotificationEffect } from "../hooks/useNotificationEffect";
+import { formatApiError } from "../lib/formatters";
+import { useNotifications } from "../providers/NotificationProvider";
 import { colors, fonts } from "../styles/tokens";
 import * as s from "../styles/shared";
-import FitScoreRing from "../components/FitScoreRing";
-import ScoreBar from "../components/ScoreBar";
-
-// Hardcoded example product for visual reference
-const PRODUCT = {
-  brand: "CeraVe",
-  name: "Moisturizing Cream",
-  category: "Moisturizer",
-  price: "$19",
-  reviewCount: 48200,
-  hypeScore: 62,
-  safetyScore: 96,
-  score: 91,
-  ingredients: [
-    { name: "Ceramides (1,3,6-II)", score: 90, label: "Barrier ✓", variant: "sage" },
-    { name: "Hyaluronic Acid", score: 78, label: "Hydrate ✓", variant: "rose" },
-    { name: "Niacinamide", score: 65, label: "Tone ✓", variant: "terra" },
-    { name: "Petrolatum", score: 40, label: "Occlusive", variant: "rose" },
-  ],
-  sentiment: { positive: 84, negative: 9, mixed: 7 },
-  factors: [
-    { label: "Great for Combination skin", positive: true },
-    { label: "Targets: Dryness, Redness", positive: true },
-    { label: "Contains your favorites: Niacinamide, Ceramides", positive: true },
-  ],
-};
-
-const barColors = {
-  sage: `linear-gradient(90deg, #b2d4ac, ${colors.moss})`,
-  rose: `linear-gradient(90deg, ${colors.blush}, ${colors.deepRose})`,
-  terra: `linear-gradient(90deg, ${colors.blush}, ${colors.terracotta})`,
-};
 
 export default function ProductDetailPage() {
-  return (
-    <div style={{ ...s.page, paddingTop: "6rem" }}>
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "2rem 3rem" }}>
-        <div style={s.card}>
+  const navigate = useNavigate();
+  const { productId } = useParams();
+  const analysisQuery = useProductAnalysisQuery(Number(productId), Boolean(productId));
+  const saveProductMutation = useSaveProductMutation();
+  const removeSavedProductMutation = useRemoveSavedProductMutation();
+  const notifications = useNotifications();
+  const saveError = formatApiError(saveProductMutation.error || removeSavedProductMutation.error);
+  const isInitialLoading = analysisQuery.isLoading && !analysisQuery.data;
 
-          {/* Header */}
-          <div style={{ marginBottom: "1.5rem" }}>
-            <div style={{
-              fontSize: "0.72rem", color: colors.lightMid,
-              textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.25rem",
-            }}>
-              {PRODUCT.brand} · {PRODUCT.category} · {PRODUCT.price}
-            </div>
-            <h3 style={{ fontFamily: fonts.display, fontSize: "1.4rem", color: colors.charcoal }}>
-              {PRODUCT.name}
-            </h3>
-          </div>
+  useNotificationEffect(
+    saveError,
+    (api, message) => api.error(message, { title: "Couldn't update saved products" }),
+    [saveProductMutation.error, removeSavedProductMutation.error],
+  );
 
-          {/* Badges */}
-          <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
-            <span style={{
-              fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase",
-              padding: "0.3rem 0.7rem", borderRadius: "100px",
-              background: "rgba(74,92,69,0.12)", color: colors.moss,
-            }}>Worth the Hype ✓</span>
-            <span style={{
-              fontSize: "0.7rem", letterSpacing: "0.06em", textTransform: "uppercase",
-              padding: "0.3rem 0.7rem", borderRadius: "100px",
-              background: "rgba(139,74,60,0.1)", color: colors.deepRose,
-            }}>{PRODUCT.reviewCount.toLocaleString()} reviews</span>
-          </div>
-
-          {/* Fit Score */}
-          <div style={{
-            display: "flex", alignItems: "center", gap: "1.2rem",
-            padding: "1.2rem", borderRadius: "16px",
-            background: "rgba(74,92,69,0.05)", marginBottom: "1.5rem",
-          }}>
-            <FitScoreRing score={PRODUCT.score} size={64} />
-            <div>
-              <div style={{
-                fontFamily: fonts.display, fontSize: "1rem",
-                color: colors.charcoal, marginBottom: "0.25rem",
-              }}>Your Fit Score</div>
-              <div style={{ fontSize: "0.82rem", color: colors.mid }}>
-                Excellent match for your profile
-              </div>
-            </div>
-          </div>
-
-          {/* Explainable factors */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1.5rem" }}>
-            {PRODUCT.factors.map((f, i) => (
-              <div key={i} style={{
-                padding: "0.55rem 0.85rem", borderRadius: "10px",
-                background: f.positive ? "rgba(74,92,69,0.06)" : "rgba(196,120,88,0.07)",
-                fontSize: "0.8rem", color: f.positive ? colors.moss : colors.terracotta,
-              }}>
-                {f.positive ? "✓ " : "⚠ "}{f.label}
-              </div>
-            ))}
-          </div>
-
-          {/* Ingredient scores */}
-          <div style={{
-            fontSize: "0.72rem", letterSpacing: "0.1em", textTransform: "uppercase",
-            color: colors.lightMid, marginBottom: "0.6rem",
-          }}>Key Ingredient Scores</div>
-          {PRODUCT.ingredients.map(ing => (
-            <div key={ing.name} style={{
-              display: "flex", alignItems: "center", gap: "0.8rem",
-              padding: "0.45rem 0", fontSize: "0.82rem",
-            }}>
-              <span style={{ color: colors.charcoal, minWidth: "140px" }}>{ing.name}</span>
-              <div style={{
-                flex: 1, height: 6, background: "rgba(196,120,88,0.12)",
-                borderRadius: 100, overflow: "hidden",
-              }}>
-                <div style={{
-                  height: "100%", width: `${ing.score}%`, borderRadius: 100,
-                  background: barColors[ing.variant],
-                }} />
-              </div>
-              <span style={{
-                fontSize: "0.68rem", letterSpacing: "0.04em",
-                color: colors.lightMid, textTransform: "uppercase",
-                minWidth: "65px", textAlign: "right",
-              }}>{ing.label}</span>
-            </div>
-          ))}
-
-          {/* Sentiment */}
-          <div style={{ display: "flex", gap: "0.5rem", marginTop: "1.5rem" }}>
-            {[
-              { label: `${PRODUCT.sentiment.positive}% Positive`, color: colors.moss },
-              { label: `${PRODUCT.sentiment.negative}% Negative`, color: "#c47878" },
-              { label: `${PRODUCT.sentiment.mixed}% Mixed`, color: "#c4a878" },
-            ].map(sent => (
-              <div key={sent.label} style={{
-                display: "flex", alignItems: "center", gap: "0.35rem",
-                fontSize: "0.73rem", padding: "0.35rem 0.75rem",
-                borderRadius: "100px", border: `1px solid ${colors.border}`, color: colors.mid,
-              }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: sent.color }} />
-                {sent.label}
-              </div>
-            ))}
-          </div>
-
-          {/* Hype + Safety */}
-          <div style={{ marginTop: "1.5rem" }}>
-            <ScoreBar label="Hype Meter" value={PRODUCT.hypeScore} width="90px" />
-            <ScoreBar label="Safety Score" value={PRODUCT.safetyScore} width="90px" />
-          </div>
-
-          {/* Explanation box */}
-          <div style={{
-            marginTop: "1.2rem", padding: "0.9rem",
-            background: "rgba(74,92,69,0.07)", borderRadius: "12px",
-            fontSize: "0.8rem", color: colors.moss, lineHeight: 1.6,
-          }}>
-            💚 <strong>Why this works for you:</strong> Ceramide-rich formula perfectly suits your
-            combination-sensitive type. Niacinamide aligns with your hyperpigmentation concern.
-            Non-fragrant, non-comedogenic.
-          </div>
-
-          {/* Save button */}
-          <button style={{ ...s.btnPrimary, width: "100%", marginTop: "1.5rem", textAlign: "center" }}>
-            ♡ Save Product
+  if (!isInitialLoading && (analysisQuery.error || !analysisQuery.data)) {
+    return (
+      <div className="page-shell page-shell--ambient" style={{ ...s.page, paddingTop: "6rem" }}>
+        <div style={{ maxWidth: 680, margin: "0 auto", padding: "2rem 3rem" }}>
+          <StatusMessage>{formatApiError(analysisQuery.error, "Product not found.")}</StatusMessage>
+          <button
+            type="button"
+            className="motion-button"
+            style={{ ...s.btnGhost, marginTop: "1rem" }}
+            onClick={() => navigate(-1)}
+          >
+            Go Back
           </button>
         </div>
       </div>
-    </div>
+    );
+  }
+
+  const analysis = analysisQuery.data;
+  const product = analysis?.product;
+
+  const toggleSave = async () => {
+    if (analysis.saved) {
+      await removeSavedProductMutation.mutateAsync(product.product_id);
+      notifications.info(`${product.product_name} removed from saved.`, {
+        title: "Removed from saved",
+        duration: 2800,
+      });
+      return;
+    }
+    await saveProductMutation.mutateAsync(product.product_id);
+    notifications.success(`${product.product_name} added to your saved list.`, {
+      title: "Saved product",
+      duration: 2800,
+    });
+  };
+
+  return (
+    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
+      <div style={{ maxWidth: 760, margin: "0 auto", padding: "2rem 3rem" }}>
+        {isInitialLoading ? (
+          <ProductDetailSkeleton />
+        ) : (
+          <Reveal className="motion-card motion-liquid-surface" style={s.card} variant="liquid">
+            <button
+              type="button"
+              className="motion-link"
+              style={{ ...s.navLink, marginBottom: "1rem" }}
+              onClick={() => navigate(-1)}
+            >
+              Back
+            </button>
+
+            <Reveal delay={60} style={{ marginBottom: "1.5rem" }}>
+              <div
+                style={{
+                  fontSize: "0.72rem",
+                  color: colors.lightMid,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  marginBottom: "0.25rem",
+                }}
+              >
+                {product.brand} / {product.category} / ${Math.round(product.price)}
+              </div>
+              <h3 style={{ fontFamily: fonts.display, fontSize: "1.6rem", color: colors.charcoal, margin: 0 }}>
+                {product.product_name}
+              </h3>
+            </Reveal>
+
+            <StaggerGroup style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+              <Tag variant="moss" motionIndex={0}>
+                {product.worth_the_hype_label}
+              </Tag>
+              <Tag variant="terra" motionIndex={1}>
+                {Math.round(product.popularity_score * 100)} popularity
+              </Tag>
+              <Tag variant="blush" motionIndex={2}>
+                {Math.round(product.irritation_risk * 100)} irritation risk
+              </Tag>
+            </StaggerGroup>
+
+            <Reveal
+              delay={110}
+              className="motion-liquid-surface"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "1.2rem",
+                padding: "1.2rem",
+                borderRadius: "16px",
+                background: "rgba(74,92,69,0.05)",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <FitScoreRing score={analysis.final_score * 100} size={64} />
+              <div>
+                <div
+                  style={{
+                    fontFamily: fonts.display,
+                    fontSize: "1rem",
+                    color: colors.charcoal,
+                    marginBottom: "0.25rem",
+                  }}
+                >
+                  Your Fit Score
+                </div>
+                <div style={{ fontSize: "0.82rem", color: colors.mid }}>{analysis.summary}</div>
+              </div>
+            </Reveal>
+
+            <StaggerGroup style={{ display: "flex", flexDirection: "column", gap: "0.55rem", marginBottom: "1.5rem" }}>
+              {analysis.reason_codes.map((reason, index) => (
+                <Reveal
+                  key={reason}
+                  index={index}
+                  variant="reveal"
+                  style={{
+                    padding: "0.55rem 0.85rem",
+                    borderRadius: "10px",
+                    background: "rgba(74,92,69,0.06)",
+                    fontSize: "0.8rem",
+                    color: colors.moss,
+                  }}
+                >
+                  + {reason}
+                </Reveal>
+              ))}
+              {analysis.warnings.map((warning, index) => (
+                <Reveal
+                  key={warning}
+                  index={index + analysis.reason_codes.length}
+                  variant="reveal"
+                  style={{
+                    padding: "0.55rem 0.85rem",
+                    borderRadius: "10px",
+                    background: "rgba(196,120,88,0.07)",
+                    fontSize: "0.8rem",
+                    color: colors.terracotta,
+                  }}
+                >
+                  ! {warning}
+                </Reveal>
+              ))}
+            </StaggerGroup>
+
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1.5rem" }}>
+              {product.ingredients.map((ingredient, index) => (
+                <Tag key={ingredient} variant="moss" motionIndex={index}>
+                  {ingredient}
+                </Tag>
+              ))}
+            </div>
+
+            <Reveal delay={180} style={{ marginBottom: "1.5rem" }}>
+              <ScoreBar label="Ingredient Match" value={Math.round(analysis.score_breakdown.ingredient_match * 100)} />
+              <ScoreBar label="Skin Type Match" value={Math.round(analysis.score_breakdown.skin_type_match * 100)} />
+              <ScoreBar label="Review Sentiment" value={Math.round(analysis.score_breakdown.review_sentiment * 100)} />
+              <ScoreBar label="Popularity" value={Math.round(analysis.score_breakdown.popularity * 100)} />
+              <ScoreBar label="Worth the Hype" value={Math.round(analysis.score_breakdown.worth_the_hype * 100)} />
+            </Reveal>
+
+            <Reveal
+              delay={220}
+              className="motion-liquid-surface"
+              style={{
+                marginTop: "1.2rem",
+                padding: "0.9rem",
+                background: "rgba(74,92,69,0.07)",
+                borderRadius: "12px",
+                fontSize: "0.8rem",
+                color: colors.moss,
+                lineHeight: 1.6,
+              }}
+            >
+              <strong>Ingredient fit:</strong> {analysis.ingredient_match_explanation}
+              <br />
+              <strong>Sentiment:</strong> {analysis.sentiment_summary}
+              <br />
+              <strong>Skin type insight:</strong> {analysis.skin_type_insight}
+            </Reveal>
+
+            <button
+              type="button"
+              className="motion-button"
+              style={{ ...s.btnPrimary, width: "100%", marginTop: "1.5rem", textAlign: "center" }}
+              onClick={toggleSave}
+              disabled={saveProductMutation.isPending || removeSavedProductMutation.isPending}
+            >
+              {analysis.saved ? "Remove from Saved" : "Save Product"}
+            </button>
+          </Reveal>
+        )}
+      </div>
+    </PageTransition>
   );
 }

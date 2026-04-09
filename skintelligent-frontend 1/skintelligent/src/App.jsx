@@ -1,44 +1,52 @@
-import { useState } from "react";
-import { fonts } from "../styles/tokens";
-import * as s from "../styles/shared";
-import Nav from "../components/Nav";
+import { useEffect } from "react";
+import { Route, Routes, useLocation } from "react-router-dom";
 
-// Pages
-import LandingPage from "../pages/LandingPage";
-import LoginPage from "../pages/LoginPage";
-import SignupPage from "../pages/SignupPage";
-import OnboardingPage from "../pages/OnboardingPage";
-import DashboardPage from "../pages/DashboardPage";
-import LookupPage from "../pages/LookupPage";
-import SavedPage from "../pages/SavedPage";
-import ProfilePage from "../pages/ProfilePage";
-import ProductDetailPage from "../pages/ProductDetailPage";
+import Nav from "./components/Nav";
+import { ProtectedRoute, PublicOnlyRoute } from "./components/RouteGuards";
+import DashboardPage from "./pages/DashboardPage";
+import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import LookupPage from "./pages/LookupPage";
+import OnboardingPage from "./pages/OnboardingPage";
+import ProductDetailPage from "./pages/ProductDetailPage";
+import ProfilePage from "./pages/ProfilePage";
+import SavedPage from "./pages/SavedPage";
+import SignupPage from "./pages/SignupPage";
 
-// Simple page-based routing — replace with React Router when ready
+const navHiddenRoutes = new Set(["/login", "/signup", "/onboarding"]);
+
 export default function App() {
-  const [page, setPage] = useState("landing");
+  const location = useLocation();
+  const showNav = !navHiddenRoutes.has(location.pathname);
 
-  // Mock user for authenticated views — remove when real auth is wired
-  const mockUser = { name: "Alex", email: "alex@email.com" };
-  const isAuth = !["landing", "login", "signup"].includes(page);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
 
   return (
-    <div>
-      <link href={fonts.googleUrl} rel="stylesheet" />
+    <div className="app-shell">
+      {showNav ? <Nav /> : null}
+      <main className="route-stage">
+        <div key={`${location.pathname}${location.search}`} className="route-stage__page">
+          <Routes location={location}>
+            <Route path="/" element={<LandingPage />} />
 
-      {/* Nav */}
-      <Nav setPage={setPage} user={isAuth ? mockUser : null} />
+            <Route element={<PublicOnlyRoute />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+            </Route>
 
-      {/* Pages */}
-      {page === "landing" && <LandingPage setPage={setPage} />}
-      {page === "login" && <LoginPage setPage={setPage} />}
-      {page === "signup" && <SignupPage setPage={setPage} />}
-      {page === "onboarding" && <OnboardingPage setPage={setPage} />}
-      {page === "dashboard" && <DashboardPage />}
-      {page === "lookup" && <LookupPage />}
-      {page === "saved" && <SavedPage />}
-      {page === "profile" && <ProfilePage />}
-      {page === "product" && <ProductDetailPage />}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/lookup" element={<LookupPage />} />
+              <Route path="/saved" element={<SavedPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/products/:productId" element={<ProductDetailPage />} />
+            </Route>
+          </Routes>
+        </div>
+      </main>
     </div>
   );
 }

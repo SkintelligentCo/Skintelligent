@@ -7,14 +7,18 @@ const VARIANTS = {
   blush: { bg: "rgba(232,196,178,0.35)", color: colors.deepRose },
 };
 
-export default function Tag({ children, variant = "terra" }) {
+export default function Tag({ children, variant = "terra", motionIndex = 0 }) {
   const v = VARIANTS[variant] || VARIANTS.terra;
   return (
-    <span style={{
-      background: v.bg, color: v.color, fontSize: "0.72rem",
-      padding: "0.3rem 0.75rem", borderRadius: "100px",
-      letterSpacing: "0.04em", whiteSpace: "nowrap",
-    }}>
+    <span
+      className="motion-pill"
+      style={{
+        "--stagger-index": motionIndex,
+        background: v.bg, color: v.color, fontSize: "0.72rem",
+        padding: "0.3rem 0.75rem", borderRadius: "100px",
+        letterSpacing: "0.04em", whiteSpace: "nowrap",
+      }}
+    >
       {children}
     </span>
   );

@@ -1,163 +1,297 @@
+import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+import {
+  useGenerateRecommendationsMutation,
+  useMeQuery,
+  usePersonalizedProductsQuery,
+  useRecommendationsQuery,
+  useRemoveSavedProductMutation,
+  useSavedProductsQuery,
+  useSaveProductMutation,
+} from "../api/hooks";
+import { PageTransition, Reveal, StaggerGroup } from "../components/Motion";
+import { DashboardHeroSkeleton, SectionHeadingSkeleton } from "../components/PageSkeletons";
+import ProductCard from "../components/ProductCard";
+import { ProductGridSkeleton } from "../components/ProductCardSkeleton";
+import { useNotificationEffect } from "../hooks/useNotificationEffect";
+import { formatApiError, formatDateTime } from "../lib/formatters";
+import { useAuth } from "../providers/AuthProvider";
+import { useNotifications } from "../providers/NotificationProvider";
 import { colors, fonts } from "../styles/tokens";
 import * as s from "../styles/shared";
-import Tag from "../components/Tag";
-import FitScoreRing from "../components/FitScoreRing";
-import ScoreBar from "../components/ScoreBar";
 
-// Hardcoded example cards — replace with real data
-const EXAMPLE_PRODUCTS = [
-  {
-    brand: "CeraVe", name: "Moisturizing Cream", price: "$19",
-    desc: "Ceramide-rich formula that restores the skin barrier. Non-comedogenic, fragrance-free.",
-    ingredients: ["Ceramides", "Hyaluronic Acid", "Niacinamide"],
-    score: 91, factor: "Great for Combination skin",
-  },
-  {
-    brand: "The Ordinary", name: "Niacinamide 10% + Zinc 1%", price: "$6",
-    desc: "High-strength vitamin and mineral formula targeting blemishes and congestion.",
-    ingredients: ["Niacinamide", "Zinc PCA"],
-    score: 84, factor: "Targets: Acne, Large Pores",
-  },
-  {
-    brand: "La Roche-Posay", name: "Cicaplast Baume B5+", price: "$18",
-    desc: "Multi-purpose balm for skin repair. Dermatologist recommended for irritated skin.",
-    ingredients: ["Panthenol", "Madecassoside", "Shea Butter"],
-    score: 87, factor: "Targets: Redness, Dryness",
-  },
-  {
-    brand: "Paula's Choice", name: "2% BHA Liquid Exfoliant", price: "$35",
-    desc: "Leave-on exfoliant that unclogs pores and smooths texture.",
-    ingredients: ["Salicylic Acid", "Green Tea"],
-    score: 78, factor: "Contains your favorites: Salicylic Acid",
-  },
-  {
-    brand: "Skinceuticals", name: "C E Ferulic", price: "$182",
-    desc: "Gold-standard vitamin C serum. Clinical-grade antioxidant protection.",
-    ingredients: ["Vitamin C", "Vitamin E", "Ferulic Acid"],
-    score: 82, factor: "Targets: Hyperpigmentation, Fine Lines",
-  },
-  {
-    brand: "Supergoop", name: "Unseen Sunscreen SPF 40", price: "$38",
-    desc: "Invisible, weightless SPF that doubles as a makeup primer.",
-    ingredients: ["Avobenzone", "Homosalate"],
-    score: 65, factor: "Not optimized for Combination skin",
-  },
-];
+function profileLabels(profile) {
+  if (!profile) {
+    return [];
+  }
 
-function ProductCard({ product }) {
-  return (
-    <div style={{
-      ...s.card, position: "relative", overflow: "hidden", cursor: "pointer",
-      transition: "transform 0.25s, box-shadow 0.25s",
-    }}>
-      {/* Accent line */}
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, height: 3,
-        background: `linear-gradient(90deg, ${colors.terracotta}, ${colors.blush})`,
-      }} />
-
-      {/* Save icon */}
-      <span style={{
-        position: "absolute", top: "1rem", right: "1rem",
-        fontSize: "1.2rem", opacity: 0.5, cursor: "pointer",
-      }}>♡</span>
-
-      {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
-        <div>
-          <div style={{
-            fontSize: "0.72rem", color: colors.lightMid,
-            textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.25rem",
-          }}>{product.brand}</div>
-          <div style={{
-            fontFamily: fonts.display, fontSize: "1.1rem",
-            color: colors.charcoal, paddingRight: "2rem",
-          }}>{product.name}</div>
-        </div>
-        <FitScoreRing score={product.score} />
-      </div>
-
-      <p style={{ fontSize: "0.82rem", color: colors.mid, lineHeight: 1.65, marginBottom: "1rem" }}>
-        {product.desc}
-      </p>
-
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.35rem", marginBottom: "1rem" }}>
-        {product.ingredients.map(i => <Tag key={i} variant="moss">{i}</Tag>)}
-        <Tag variant="terra">{product.price}</Tag>
-      </div>
-
-      <div style={{
-        padding: "0.65rem 0.9rem", borderRadius: "12px",
-        background: "rgba(74,92,69,0.07)", fontSize: "0.78rem",
-        lineHeight: 1.5, color: colors.moss,
-      }}>
-        ✓ {product.factor}
-      </div>
-    </div>
-  );
+  return [
+    profile.skin_type,
+    ...profile.skin_concerns.slice(0, 2),
+    ...profile.ingredient_preferences.slice(0, 2),
+  ];
 }
 
+const filters = [
+  { id: "all", label: "All Products" },
+  { id: "high-fit", label: "High Fit (75+)" },
+  { id: "saved", label: "Saved" },
+];
+
+const productGridStyle = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+  gap: "1.5rem",
+  marginTop: "1.5rem",
+};
+
 export default function DashboardPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [filter, setFilter] = useState("all");
+  const meQuery = useMeQuery(true);
+  const recommendationsQuery = useRecommendationsQuery({ limit: 6, useCached: true }, true);
+  const productsQuery = usePersonalizedProductsQuery({ limit: 6 }, true);
+  const savedProductsQuery = useSavedProductsQuery(true);
+  const generateRecommendationsMutation = useGenerateRecommendationsMutation();
+  const saveProductMutation = useSaveProductMutation();
+  const removeSavedProductMutation = useRemoveSavedProductMutation();
+
+  const displayUser = meQuery.data || user;
+  const products = productsQuery.data || [];
+  const notifications = useNotifications();
+  const dataError = formatApiError(productsQuery.error || recommendationsQuery.error || savedProductsQuery.error);
+  const refreshError = formatApiError(generateRecommendationsMutation.error);
+  const saveError = formatApiError(saveProductMutation.error || removeSavedProductMutation.error);
+  const isInitialLoading =
+    (productsQuery.isLoading && !productsQuery.data) ||
+    (recommendationsQuery.isLoading && !recommendationsQuery.data) ||
+    (savedProductsQuery.isLoading && !savedProductsQuery.data);
+
+  useNotificationEffect(
+    dataError,
+    (api, message) => api.error(message, { title: "Couldn't load recommendations" }),
+    [productsQuery.error, recommendationsQuery.error, savedProductsQuery.error],
+  );
+  useNotificationEffect(
+    refreshError,
+    (api, message) => api.error(message, { title: "Refresh failed" }),
+    [generateRecommendationsMutation.error],
+  );
+  useNotificationEffect(
+    saveError,
+    (api, message) => api.error(message, { title: "Couldn't update saved products" }),
+    [saveProductMutation.error, removeSavedProductMutation.error],
+  );
+
+  const filteredProducts = useMemo(() => {
+    if (filter === "high-fit") {
+      return products.filter((product) => product.final_score >= 0.75);
+    }
+    if (filter === "saved") {
+      return products.filter((product) => product.saved);
+    }
+    return products;
+  }, [filter, products]);
+
+  const toggleSave = async (product) => {
+    if (product.saved) {
+      await removeSavedProductMutation.mutateAsync(product.product_id);
+      notifications.info(`${product.product_name} removed from saved.`, {
+        title: "Removed from saved",
+        duration: 2800,
+      });
+      return;
+    }
+    await saveProductMutation.mutateAsync(product.product_id);
+    notifications.success(`${product.product_name} added to your saved list.`, {
+      title: "Saved product",
+      duration: 2800,
+    });
+  };
+
+  const activeSaveMutation = saveProductMutation.isPending || removeSavedProductMutation.isPending;
+
   return (
-    <div style={{ ...s.page, paddingTop: "6rem" }}>
+    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 3rem" }}>
-
-        {/* Profile summary */}
-        <div style={{
-          ...s.card, marginBottom: "3rem", display: "flex",
-          justifyContent: "space-between", alignItems: "center",
-          flexWrap: "wrap", gap: "1.5rem",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1.2rem" }}>
-            <div style={{
-              width: 56, height: 56, borderRadius: "50%",
-              background: `linear-gradient(135deg, ${colors.blush}, ${colors.sage})`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              fontSize: "1.4rem",
-            }}>🌿</div>
-            <div>
-              <div style={{ fontFamily: fonts.display, fontSize: "1.15rem", marginBottom: "0.2rem" }}>
-                Your Skin Profile
+        {isInitialLoading ? (
+          <DashboardHeroSkeleton />
+        ) : (
+          <Reveal
+            variant="liquid"
+            className="motion-card motion-liquid-surface"
+            style={{
+              ...s.card,
+              marginBottom: "3rem",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: "1.5rem",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "1.2rem" }}>
+              <div
+                className="motion-stat"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  background: `linear-gradient(135deg, ${colors.blush}, ${colors.sage})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.1rem",
+                  color: colors.charcoal,
+                }}
+              >
+                {displayUser?.name?.[0] || "S"}
               </div>
-              <div style={{
-                fontSize: "0.78rem", color: colors.lightMid,
-                textTransform: "uppercase", letterSpacing: "0.05em",
-              }}>Combination · Sensitive</div>
+              <div>
+                <div style={{ fontFamily: fonts.display, fontSize: "1.15rem", marginBottom: "0.2rem" }}>
+                  {displayUser?.name}'s Skin Profile
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.78rem",
+                    color: colors.lightMid,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {displayUser?.profile?.skin_type || "profile pending"}
+                </div>
+              </div>
             </div>
-          </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
-            <Tag>Hyperpigmentation</Tag>
-            <Tag>Dryness</Tag>
-            <Tag variant="moss">Niacinamide ✓</Tag>
-            <Tag variant="moss">Ceramides ✓</Tag>
-          </div>
-          <button style={s.btnGhost}>Edit Profile</button>
+
+            <StaggerGroup style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              {profileLabels(displayUser?.profile).map((label, index) => (
+                <Reveal
+                  key={label}
+                  as="span"
+                  index={index}
+                  variant="pop"
+                  style={{
+                    padding: "0.35rem 0.8rem",
+                    borderRadius: "999px",
+                    background: "rgba(74,92,69,0.08)",
+                    color: colors.moss,
+                    fontSize: "0.76rem",
+                  }}
+                >
+                  {label}
+                </Reveal>
+              ))}
+            </StaggerGroup>
+
+            <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                className="motion-button"
+                style={s.inlineAction}
+                onClick={() => navigate("/profile")}
+              >
+                Edit Profile
+              </button>
+              <button
+                type="button"
+                className="motion-button"
+                style={s.btnPrimary}
+                onClick={async () => {
+                  await generateRecommendationsMutation.mutateAsync({ limit: 6 });
+                  notifications.info("Your recommendations were refreshed.", {
+                    title: "Recommendations updated",
+                    duration: 3200,
+                  });
+                }}
+                disabled={generateRecommendationsMutation.isPending}
+              >
+                {generateRecommendationsMutation.isPending ? "Refreshing..." : "Refresh Recommendations"}
+              </button>
+            </div>
+          </Reveal>
+        )}
+
+        {isInitialLoading ? (
+          <SectionHeadingSkeleton titleWidth="42%" subWidth="34%" />
+        ) : (
+          <>
+            <Reveal as="p" delay={40} style={s.sectionLabel}>
+              Your Recommendations
+            </Reveal>
+            <Reveal as="h2" delay={100} style={{ ...s.sectionTitle, marginBottom: "0.5rem" }}>
+              Products ranked for <em style={s.sectionTitleEm}>your skin</em>
+            </Reveal>
+            <Reveal as="p" delay={150} style={{ ...s.sectionSub, marginBottom: "2rem" }}>
+              Generated {formatDateTime(recommendationsQuery.data?.generated_at)}. Saved shortlist:{" "}
+              {savedProductsQuery.data?.length || 0}.
+            </Reveal>
+          </>
+        )}
+
+        <div style={{ minHeight: 36, marginBottom: "2rem" }}>
+          {isInitialLoading ? (
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }} aria-hidden="true">
+              {filters.map((entry) => (
+                <div
+                  key={entry.id}
+                  style={{
+                    height: 36,
+                    minWidth: entry.id === "high-fit" ? 120 : 94,
+                    borderRadius: 999,
+                    background: "linear-gradient(180deg, rgba(255,255,255,0.78), rgba(247,239,233,0.92))",
+                    border: "1px solid rgba(196, 120, 88, 0.08)",
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <StaggerGroup style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              {filters.map((entry, index) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className="motion-chip motion-chip-button"
+                  style={{ ...s.filterPill(filter === entry.id), "--stagger-index": index }}
+                  onClick={() => setFilter(entry.id)}
+                >
+                  {entry.label}
+                </button>
+              ))}
+            </StaggerGroup>
+          )}
         </div>
 
-        {/* Section header */}
-        <p style={s.sectionLabel}>Your Recommendations</p>
-        <h2 style={{ ...s.sectionTitle, marginBottom: "0.5rem" }}>
-          Products ranked for <em style={s.sectionTitleEm}>your skin</em>
-        </h2>
-        <p style={{ ...s.sectionSub, marginBottom: "2rem" }}>
-          Sorted by personal fit score. Every recommendation is explainable — tap any card to see why.
-        </p>
-
-        {/* Filters */}
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "2rem" }}>
-          <button style={s.filterPill(true)}>All Products</button>
-          <button style={s.filterPill(false)}>High Fit (75+)</button>
-          <button style={s.filterPill(false)}>Worth the Hype</button>
-        </div>
-
-        {/* Product grid */}
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-          gap: "1.5rem",
-        }}>
-          {EXAMPLE_PRODUCTS.map((p, i) => <ProductCard key={i} product={p} />)}
+        <div style={{ minHeight: 430 }}>
+          {isInitialLoading ? (
+            <div style={productGridStyle}>
+              <ProductGridSkeleton count={6} />
+            </div>
+          ) : filteredProducts.length ? (
+            <StaggerGroup style={productGridStyle}>
+              {filteredProducts.map((product, index) => (
+                <Reveal key={product.product_id} index={index} variant="bounce">
+                  <ProductCard
+                    product={product}
+                    onOpen={() => navigate(`/products/${product.product_id}`)}
+                    onToggleSave={() => toggleSave(product)}
+                    isBusy={activeSaveMutation}
+                  />
+                </Reveal>
+              ))}
+            </StaggerGroup>
+          ) : (
+            <Reveal
+              className="motion-card motion-liquid-surface"
+              style={{ ...s.card, textAlign: "center", minHeight: 220, display: "grid", placeItems: "center" }}
+            >
+              No products match this filter right now.
+            </Reveal>
+          )}
         </div>
       </div>
-    </div>
+    </PageTransition>
   );
 }
