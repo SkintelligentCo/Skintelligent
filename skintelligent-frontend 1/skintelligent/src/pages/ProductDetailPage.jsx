@@ -35,8 +35,8 @@ export default function ProductDetailPage() {
 
   if (!isInitialLoading && (analysisQuery.error || !analysisQuery.data)) {
     return (
-      <div className="page-shell page-shell--ambient" style={{ ...s.page, paddingTop: "6rem" }}>
-        <div style={{ maxWidth: 680, margin: "0 auto", padding: "2rem 3rem" }}>
+      <div className="page-shell page-shell--ambient" style={s.pageWithNav}>
+        <div style={s.pageContainer(680)}>
           <StatusMessage>{formatApiError(analysisQuery.error, "Product not found.")}</StatusMessage>
           <button
             type="button"
@@ -71,8 +71,8 @@ export default function ProductDetailPage() {
   };
 
   return (
-    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
-      <div style={{ maxWidth: 760, margin: "0 auto", padding: "2rem 3rem" }}>
+    <PageTransition style={s.pageWithNav}>
+      <div style={s.pageContainer(760)}>
         {isInitialLoading ? (
           <ProductDetailSkeleton />
         ) : (
@@ -121,6 +121,7 @@ export default function ProductDetailPage() {
               style={{
                 display: "flex",
                 alignItems: "center",
+                flexWrap: "wrap",
                 gap: "1.2rem",
                 padding: "1.2rem",
                 borderRadius: "16px",

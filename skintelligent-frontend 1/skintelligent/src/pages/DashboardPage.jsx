@@ -45,9 +45,7 @@ const filters = [
 ];
 
 const productGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-  gap: "1.5rem",
+  ...s.productGrid,
   marginTop: "1.5rem",
 };
 
@@ -154,7 +152,7 @@ export default function DashboardPage() {
     if (isInitialLoading) {
       return {
         eyebrow: "Loading your recommendations",
-        title: "Give Us a Moment While We Load Your Perfect Skin",
+        title: "Give Us a Moment While We Build Your Perfect Skin",
         message:
           "We’re pulling your profile, saved products, and recommended matches into one view.",
         chips: ["Loading your profile", "Fetching product matches", "Preparing your dashboard"],
@@ -211,8 +209,8 @@ export default function DashboardPage() {
   };
 
   return (
-    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 3rem" }}>
+    <PageTransition style={s.pageWithNav}>
+      <div style={s.pageContainer(1200)}>
         {isInitialLoading ? (
           <DashboardHeroSkeleton />
         ) : (

@@ -42,7 +42,7 @@ export default function ProductCard({
         backdropFilter: "none",
         WebkitBackdropFilter: "none",
         cursor: isExiting ? "default" : "pointer",
-        minHeight: 430,
+        minHeight: "clamp(390px, 82vw, 430px)",
         height: "100%",
         display: "flex",
         flexDirection: "column",
@@ -59,32 +59,6 @@ export default function ProductCard({
           background: `linear-gradient(90deg, ${colors.terracotta}, ${colors.blush})`,
         }}
       />
-
-      <button
-        className={`motion-save-toggle motion-press ${
-          product.saved ? "is-saved" : ""
-        } ${isBusy ? "is-saving" : ""}`.trim()}
-        type="button"
-        aria-label={product.saved ? "Remove saved product" : "Save product"}
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleSave();
-        }}
-        disabled={isBusy || isExiting}
-        style={{
-          position: "absolute",
-          top: "1rem",
-          right: "1rem",
-          fontSize: "1.1rem",
-          opacity: 0.78,
-          cursor: isExiting ? "default" : "pointer",
-          background: "none",
-          border: "none",
-          color: product.saved ? colors.deepRose : colors.lightMid,
-        }}
-      >
-        {product.saved ? "\u2665" : "\u2661"}
-      </button>
 
       <div
         style={{
@@ -113,7 +87,6 @@ export default function ProductCard({
               fontFamily: fonts.display,
               fontSize: "1.1rem",
               color: colors.charcoal,
-              paddingRight: "2rem",
               display: "-webkit-box",
               WebkitLineClamp: 2,
               WebkitBoxOrient: "vertical",
@@ -125,7 +98,41 @@ export default function ProductCard({
             {product.product_name}
           </div>
         </div>
-        {score !== null ? <FitScoreRing score={score} /> : null}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            gap: "0.55rem",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            className={`motion-save-toggle motion-press ${
+              product.saved ? "is-saved" : ""
+            } ${isBusy ? "is-saving" : ""}`.trim()}
+            type="button"
+            aria-label={product.saved ? "Remove saved product" : "Save product"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggleSave();
+            }}
+            disabled={isBusy || isExiting}
+            style={{
+              fontSize: "1.1rem",
+              opacity: 0.78,
+              cursor: isExiting ? "default" : "pointer",
+              background: "none",
+              border: "none",
+              color: product.saved ? colors.deepRose : colors.lightMid,
+              padding: 0,
+              lineHeight: 1,
+            }}
+          >
+            {product.saved ? "\u2665" : "\u2661"}
+          </button>
+          {score !== null ? <FitScoreRing score={score} /> : null}
+        </div>
       </div>
 
       <p

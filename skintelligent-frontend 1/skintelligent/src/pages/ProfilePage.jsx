@@ -74,8 +74,8 @@ export default function ProfilePage() {
   };
 
   return (
-    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
-      <div style={{ maxWidth: 700, margin: "0 auto", padding: "2rem 3rem" }}>
+    <PageTransition style={s.pageWithNav}>
+      <div style={s.pageContainer(700)}>
         {profileQuery.isLoading && !profileQuery.data ? (
           <ProfileFormSkeleton />
         ) : (
@@ -150,29 +150,28 @@ export default function ProfilePage() {
               />
             </FieldBlock>
 
-            <Reveal
-              delay={280}
-              style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginBottom: "1.5rem" }}
-            >
-              <button
-                type="button"
-                className="motion-chip"
-                style={s.chip(values.acne_prone)}
-                onClick={() => setValue("acne_prone", !values.acne_prone, { shouldDirty: true })}
-              >
-                Acne-prone
-              </button>
-              <button
-                type="button"
-                className="motion-chip"
-                style={s.chip(values.fragrance_allergy)}
-                onClick={() =>
-                  setValue("fragrance_allergy", !values.fragrance_allergy, { shouldDirty: true })
-                }
-              >
-                Fragrance allergy
-              </button>
-            </Reveal>
+            <FieldBlock label="Extra Skin Flags" delay={280}>
+              <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
+                <button
+                  type="button"
+                  className="motion-chip"
+                  style={s.chip(values.acne_prone)}
+                  onClick={() => setValue("acne_prone", !values.acne_prone, { shouldDirty: true })}
+                >
+                  Acne-prone
+                </button>
+                <button
+                  type="button"
+                  className="motion-chip"
+                  style={s.chip(values.fragrance_allergy)}
+                  onClick={() =>
+                    setValue("fragrance_allergy", !values.fragrance_allergy, { shouldDirty: true })
+                  }
+                >
+                  Fragrance allergy
+                </button>
+              </div>
+            </FieldBlock>
 
             <button
               type="button"

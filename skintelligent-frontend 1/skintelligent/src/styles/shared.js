@@ -11,6 +11,24 @@ export const page = {
   overflowX: "clip",
 };
 
+export const pageWithNav = {
+  ...page,
+  paddingTop: "clamp(5.35rem, 9vw, 6.25rem)",
+};
+
+export const pageContainer = (maxWidth = 1200) => ({
+  width: "min(100%, 100%)",
+  maxWidth,
+  margin: "0 auto",
+  padding: "clamp(1rem, 3vw, 2rem) clamp(1rem, 4vw, 3rem)",
+});
+
+export const productGrid = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 280px), 1fr))",
+  gap: "clamp(1rem, 2vw, 1.5rem)",
+};
+
 // Nav
 export const nav = {
   position: "fixed",
@@ -21,12 +39,21 @@ export const nav = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  padding: "1.4rem 3rem",
+  padding: "calc(env(safe-area-inset-top, 0px) + 0.85rem) clamp(1rem, 3vw, 3rem) 0.9rem",
   background: "rgba(253,249,245,0.76)",
   backdropFilter: "blur(20px)",
   borderBottom: `1px solid ${colors.border}`,
   boxShadow: "0 12px 40px rgba(139,74,60,0.08)",
   fontFamily: fonts.body,
+};
+
+export const navInner = {
+  width: "min(100%, 1240px)",
+  margin: "0 auto",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
+  gap: "1rem",
 };
 
 export const logo = {
@@ -155,7 +182,7 @@ export const card = {
   backdropFilter: "blur(20px)",
   border: `1px solid ${colors.border}`,
   borderRadius: radii.xl,
-  padding: "2rem",
+  padding: "clamp(1.15rem, 2.6vw, 2rem)",
   boxShadow: shadows.card,
   position: "relative",
   transition: "transform 260ms ease, box-shadow 260ms ease, border-color 260ms ease",

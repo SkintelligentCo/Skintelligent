@@ -60,7 +60,7 @@ export default function LandingPage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          padding: "9rem 3rem 4rem",
+          padding: "clamp(7rem, 12vw, 9rem) clamp(1rem, 4vw, 3rem) clamp(3rem, 8vw, 4rem)",
           position: "relative",
         }}
       >
@@ -87,7 +87,7 @@ export default function LandingPage() {
             zIndex: 1,
             display: "grid",
             gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 360px), 1fr))",
-            gap: "3rem",
+            gap: "clamp(1.5rem, 4vw, 3rem)",
             alignItems: "center",
           }}
         >
@@ -161,7 +161,7 @@ export default function LandingPage() {
             </StaggerGroup>
           </div>
 
-          <div style={{ position: "relative", minHeight: 560 }}>
+          <div style={{ position: "relative", minHeight: "clamp(420px, 70vw, 560px)" }}>
             <Reveal
               delay={120}
               variant="liquid"
@@ -334,6 +334,7 @@ export default function LandingPage() {
             <Reveal
               delay={260}
               variant="bounce"
+              className="motion-card landing-hero-note"
               style={{
                 ...s.card,
                 position: "absolute",
@@ -343,7 +344,6 @@ export default function LandingPage() {
                 padding: "1.1rem 1rem",
                 background: "linear-gradient(180deg, rgba(255,250,246,0.92), rgba(244,236,228,0.82))",
               }}
-              className="motion-card"
             >
               <div style={{ ...s.sectionLabel, marginBottom: "0.35rem" }}>What the system checks</div>
               <div style={{ fontFamily: fonts.display, fontSize: "1.05rem", marginBottom: "0.45rem" }}>
@@ -358,7 +358,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section style={{ background: colors.warmWhite, padding: "6rem 3rem" }}>
+      <section style={{ background: colors.warmWhite, padding: "clamp(4rem, 8vw, 6rem) clamp(1rem, 4vw, 3rem)" }}>
         <Reveal delay={40} style={{ textAlign: "center", marginBottom: "4rem" }}>
           <p style={s.sectionLabel}>Platform Features</p>
           <h2 style={{ ...s.sectionTitle, textAlign: "center" }}>
@@ -369,7 +369,7 @@ export default function LandingPage() {
           style={{
             display: "grid",
             gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: "1.5rem",
+            gap: "clamp(1rem, 2vw, 1.5rem)",
             maxWidth: 1200,
             margin: "0 auto",
           }}
@@ -408,7 +408,7 @@ export default function LandingPage() {
         </StaggerGroup>
       </section>
 
-      <section style={{ textAlign: "center", padding: "6rem 3rem" }}>
+      <section style={{ textAlign: "center", padding: "clamp(4rem, 8vw, 6rem) clamp(1rem, 4vw, 3rem)" }}>
         <Reveal delay={40}>
           <p style={s.sectionLabel}>By the Numbers</p>
           <h2 style={{ ...s.sectionTitle, textAlign: "center" }}>
@@ -419,7 +419,7 @@ export default function LandingPage() {
           style={{
             display: "flex",
             justifyContent: "center",
-            gap: "5rem",
+            gap: "clamp(1.5rem, 6vw, 5rem)",
             marginTop: "3rem",
             flexWrap: "wrap",
           }}
@@ -456,7 +456,7 @@ export default function LandingPage() {
         style={{
           background: colors.charcoal,
           textAlign: "center",
-          padding: "7rem 3rem",
+          padding: "clamp(4.5rem, 9vw, 7rem) clamp(1rem, 4vw, 3rem)",
           position: "relative",
           overflow: "hidden",
         }}

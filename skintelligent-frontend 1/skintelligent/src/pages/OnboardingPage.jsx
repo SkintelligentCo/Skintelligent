@@ -192,26 +192,28 @@ export default function OnboardingPage() {
               onChange={(nextValues) => setValue("ingredient_avoid", nextValues, { shouldDirty: true })}
             />
           </FieldBlock>
-          <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginTop: "1.5rem" }}>
-            <button
-              type="button"
-              className="motion-chip"
-              style={s.chip(values.acne_prone)}
-              onClick={() => setValue("acne_prone", !values.acne_prone, { shouldDirty: true })}
-            >
-              Acne-prone
-            </button>
-            <button
-              type="button"
-              className="motion-chip"
-              style={s.chip(values.fragrance_allergy)}
-              onClick={() =>
-                setValue("fragrance_allergy", !values.fragrance_allergy, { shouldDirty: true })
-              }
-            >
-              Fragrance allergy
-            </button>
-          </div>
+          <FieldBlock label="Extra Skin Flags">
+            <div style={{ display: "flex", gap: "0.8rem", flexWrap: "wrap", marginTop: "0.6rem" }}>
+              <button
+                type="button"
+                className="motion-chip"
+                style={s.chip(values.acne_prone)}
+                onClick={() => setValue("acne_prone", !values.acne_prone, { shouldDirty: true })}
+              >
+                Acne-prone
+              </button>
+              <button
+                type="button"
+                className="motion-chip"
+                style={s.chip(values.fragrance_allergy)}
+                onClick={() =>
+                  setValue("fragrance_allergy", !values.fragrance_allergy, { shouldDirty: true })
+                }
+              >
+                Fragrance allergy
+              </button>
+            </div>
+          </FieldBlock>
         </>
       );
     }
@@ -291,7 +293,7 @@ export default function OnboardingPage() {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        padding: "2rem",
+        padding: "clamp(1rem, 4vw, 2rem)",
       }}
     >
       <div style={{ width: "100%", maxWidth: 680 }}>

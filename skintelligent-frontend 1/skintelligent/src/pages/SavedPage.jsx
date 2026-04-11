@@ -19,9 +19,7 @@ import { colors, fonts } from "../styles/tokens";
 import * as s from "../styles/shared";
 
 const productGridStyle = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-  gap: "1.5rem",
+  ...s.productGrid,
 };
 const cardExitDurationMs = 520;
 
@@ -157,8 +155,8 @@ export default function SavedPage() {
   };
 
   return (
-    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
-      <div style={{ maxWidth: 1200, margin: "0 auto", padding: "2rem 3rem" }}>
+    <PageTransition style={s.pageWithNav}>
+      <div style={s.pageContainer(1200)}>
         {isInitialLoading ? (
           <SectionHeadingSkeleton titleWidth="36%" subWidth="28%" />
         ) : (

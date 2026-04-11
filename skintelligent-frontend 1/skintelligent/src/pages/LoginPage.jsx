@@ -89,7 +89,7 @@ export default function LoginPage() {
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
-        padding: "2rem",
+        padding: "clamp(1rem, 4vw, 2rem)",
       }}
     >
       <form

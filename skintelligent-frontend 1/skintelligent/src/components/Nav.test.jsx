@@ -1,5 +1,5 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 
@@ -55,11 +55,39 @@ describe("Nav", () => {
 
     await user.click(screen.getByRole("button", { name: /profile options/i }));
 
-    expect(screen.getByText(/preferences|settings/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/preferences|settings/i).length).toBeGreaterThan(0);
 
     await user.click(screen.getByRole("menuitem", { name: /log out/i }));
 
     expect(mutateAsync).toHaveBeenCalledTimes(1);
     expect(await screen.findByText("Login")).toBeInTheDocument();
+  });
+
+  it("opens the mobile menu and navigates through the sheet", async () => {
+    const user = userEvent.setup();
+
+    useAuth.mockReturnValue({
+      user: {
+        name: "Maya Patel",
+        email: "maya@example.com",
+      },
+    });
+    useLogoutMutation.mockReturnValue({
+      mutateAsync: vi.fn().mockResolvedValue({}),
+      isPending: false,
+    });
+
+    render(<TestApp />);
+
+    await user.click(screen.getByRole("button", { name: /open navigation menu/i }));
+
+    const dialog = screen.getByRole("dialog", { name: /navigation menu/i });
+    expect(dialog).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("link", { name: /saved/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: /navigation menu/i })).not.toBeInTheDocument();
+    });
   });
 });

@@ -53,7 +53,7 @@ export default function App() {
       <LoadingScreen
         active={isLoading}
         eyebrow="Opening Skintelligent"
-        title="Give Us a Moment While We Prepare Your Dashboard"
+        title="Give Us a Moment While We Build Your Dashboard"
         message="We’re checking your session and getting the right experience ready for you."
         chips={["Restoring your session", "Preparing your route", "Loading your workspace"]}
       />

@@ -72,8 +72,8 @@ export default function LookupPage() {
   const isUpdatingResults = searchEnabled && productsQuery.isFetching && hasResults;
 
   return (
-    <PageTransition style={{ ...s.page, paddingTop: "6rem" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "2rem 3rem" }}>
+    <PageTransition style={s.pageWithNav}>
+      <div style={s.pageContainer(1100)}>
         <Reveal as="p" delay={40} style={s.sectionLabel}>
           Product Lookup
         </Reveal>
@@ -131,11 +131,7 @@ export default function LookupPage() {
             <>
               <SectionHeadingSkeleton titleWidth="38%" subWidth="28%" marginBottom="1.5rem" />
               <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                  gap: "1.5rem",
-                }}
+                style={s.productGrid}
               >
                 <ProductGridSkeleton count={6} />
               </div>
@@ -157,9 +153,7 @@ export default function LookupPage() {
               </div>
               <StaggerGroup
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                  gap: "1.5rem",
+                  ...s.productGrid,
                   opacity: isUpdatingResults ? 0.84 : 1,
                   transition: "opacity 200ms ease",
                 }}
